@@ -65,8 +65,8 @@ export const message = (messageId, token, cb) => {
     });
 };
 
-export const annotationAF = (conversationId, targetUserId, targetDialogId, title, text, token, cb) => {
-  log(`########################### annotating dialog ${targetDialogId}`);
+export const sendTargeted = (conversationId, targetUserId, targetDialogId, title, text, token, cb) => {
+  log(`annotating dialog ${targetDialogId}`);
   graphql.query(util.format(`
   mutation {
     createTargetedMessage(input: {

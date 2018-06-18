@@ -1,6 +1,4 @@
-# watsonwork-weather
-
-[![Build Status](https://travis-ci.org/watsonwork/watsonwork-weather.svg)](https://travis-ci.org/watsonwork/watsonwork-weather)
+# watsonwork-gmail-oauth2
 
 A sample Watson Work cognitive app that listens to messages posted to a
 space in IBM Watson Workspace, understands the natural language conversation
@@ -34,7 +32,22 @@ If you want to give the sample app a quick try using [Bluemix]
 from Github without even having to download it to your local development
 environment and build it yourself. Just click the button below:
 
-[![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/watsonwork/watsonwork-weather&branch=master)
+[![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/ZacharyStair/watsonwork-gmail-oauth2&branch=master)
+
+> Note: it is likely that the pipeline step failed to automatically configure,
+> you can create your own by adding a pipeline step with two phases: 'build'
+> and 'deploy'.
+> 
+> For the build step, choose 'npm' as the build type and replace
+> the build code with the following (obtained from .bluemix/pipeline.yml):
+> ```
+> #!/bin/bash
+> export PATH=/opt/IBM/node-v6.2.2/bin:$PATH
+> export NODE_ENV=development
+> npm install
+> npm run babel
+> ```
+> feel free to double check the other settings, but the default values should be fine.
 
 Once that's done, go to your
 [Bluemix Dashboard](https://console.ng.bluemix.net/dashboard/cf-apps). The
@@ -64,26 +77,6 @@ cd watsonwork-weather
 npm run build
 ```
 
-### Configuring the Bluemix Watson Conversation service
-
-The sample Weather app uses Watson Conversation to understand natural
-language and provide a natural language conversational interface, so
-you need to configure a Watson Conversation Bluemix service for it.
-
-Go to the
-[Bluemix Watson Dashboard](https://console.ng.bluemix.net/dashboard/watson)
-and create a Watson Conversation service.
-
-Note the Watson Conversation service user name and password, as you will
-need to configure the Weather app with them.
-
-From the Watson Conversation service page click **Launch tool** to open
-the Watson Conversation tooling, and import **watson.json** into a new
-Watson Conversation workspace.
-
-Note the Watson Conversation workspace id, as you will need to configure the
-Weather app with it.
-
 ### Configuring the Weather Company Data service
 
 The sample Weather app uses the Weather Company Data API to retrieve
@@ -102,7 +95,7 @@ need to configure the Weather app with them.
 
 In your Web browser, go to [Watson Work Services / Apps]
 (https://workspace.ibm.com/developer/apps) and add a new app named
-**Weather** with a Webhook configured for **message-created** and
+**Messages** with a Webhook configured for **message-created** and
 **message-annotation-added** events.
 
 Set the Webhook **Callback URL** to a public URL targeting the server where
@@ -124,11 +117,12 @@ select your app and under **Runtime** / **Environment Variables** /
 **User Defined**, add the following variables:
 
 ```
-WEATHER_APP_ID: <the Weather app id>                                      
-WEATHER_APP_SECRET: <the Weather app secret>                              
-WEATHER_WEBHOOK_SECRET: <the Weather Webhook secret>
-WEATHER_TWC_USER: <your Weather company service user>
-WEATHER_TWC_PASSWORD: <your Weather company service password>
+WW_APP_ID: <this app's id>                                      
+WW_APP_SECRET: <this app's secret>                              
+WW_WEBHOOK_SECRET: <this app's secret>
+GAPI_CLIENT_ID: <obtained from Google app dashboard>
+GAPI_CLIENT_SECRET: <obtained from Google app dashboard>
+GAPI_CLIENT_REDIRECT_URI: <obtained from Google app dashboard>
 DEBUG: watsonwork-*
 ```
 
@@ -156,11 +150,12 @@ You can skip this if you've just started the app on Bluemix.
 In the terminal window, do the following:
 ```
 # Configure the app id and app secret
-export WEATHER_APP_ID=<the Weather app id>
-export WEATHER_APP_SECRET=<the Weather app secret>
-export WEATHER_WEBHOOK_SECRET=<the Weather Webhook secret>
-export WEATHER_TWC_USER: <your Weather company service user>
-export WEATHER_TWC_PASSWORD: <your Weather company service password>
+export WW_APP_ID<this app's id>                                     
+export WW_APP_SECRET<this app's secret>                             
+export WW_WEBHOOK_SECRET<this app's secret>
+export GAPI_CLIENT_ID<obtained from Google app dashboard>
+export GAPI_CLIENT_SECRET<obtained from Google app dashboard>
+export GAPI_CLIENT_REDIRECT_URI<obtained from Google app dashboard>
 ```
 
 The Watson Work platform requires Webhook endpoints to use HTTPS. The
@@ -228,7 +223,7 @@ npm start
 
 You can now go back to
 [Watson Work Services / Apps](https://workspace.ibm.com/developer/apps),  
-edit the **Weather** app and set its Webhook **Callback URL** to
+edit the **Messages** app and set its Webhook **Callback URL** to
 `https://<subdomain name>.localtunnel.me/weather`.
 
 ### Enabling the app Webhook
@@ -238,7 +233,7 @@ you're ready to **enable** its Webhook on the Watson Work platform.
 
 Go back to
 [Watson Work Services / Apps](https://workspace.ibm.com/developer/apps),
-edit the **Weather** app and set its Webhook to **Enabled**. Watson Work will
+edit the **Messages** app and set its Webhook to **Enabled**. Watson Work will
 ping the app Webhook callback URL with a verification challenge request to
 check that it's up and responding correctly.
 
@@ -254,18 +249,18 @@ You're now ready to chat with the sample app!
 
 Go to [Watson Workspace](https://workspace.ibm.com) and create a space
 named **Examples**, then open the **Apps** tab for that space and add the
-**Weather** app to it.
+**Messages** app to it.
 
 In the **Examples** space, say "*Is it raining in San Francisco?*".
 
-The Weather app will respond with a message asking you to confirm that you're
+The Messages app will respond with a message asking you to confirm that you're
 interested in the weather in San Francisco: 
 "*Hey [your name], I think you're looking for the weather conditions in
 San Francisco. Is that correct?*".
 
 Say "*yes*".
 
-The Weather app will then respond with the weather conditions in San
+The Messages app will then respond with the weather conditions in San
 Francisco, like this for example:
 "*San Francisco, CA, 48F Feels like 41F, Fair*"
 
@@ -287,9 +282,6 @@ src/          - Javascript sources
   oauth.js    - obtains OAuth tokens for the app
   sign.js     - signs and verifies Webhook requests and responses
   state.js    - stores conversation state in a database
-  users.js    - queries user profile info
-  weather.js  - gets weather info from The Weather Company
-  geocode.js  - gets the geolocation of a city
   ssl.js      - configures the app to use an SSL certificate
 
   test/       - unit tests

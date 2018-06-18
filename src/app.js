@@ -1,5 +1,5 @@
 // A sample app that listens to messages posted to a space in IBM
-// Watson Workspace and implements actions that return the weather.
+// Watson Workspace and implements actions that return the user's messages.
 
 import express from 'express';
 import * as util from 'util';
@@ -12,16 +12,15 @@ import * as sign from './sign';
 import * as messages from './messages';
 import * as events from './events';
 import * as state from './state';
-import * as twc from './weather';
 import googleClient from './google';
-//import { google } from 'googleapis';
+// import { google } from 'googleapis';
 import debug from 'debug';
 
 // Debug log
-const log = debug('watsonwork-weather-app');
+const log = debug('watsonwork-messages-app');
 
-// Handle events sent to the Weather action Webhook at /weather
-export const weather = (appId, store, wuser, wpassword, token) =>
+// Handle events sent to the Weather action Webhook at /messages
+export const messages = (appId, store, token) =>
   (req, res) => {
     // log('Received body %o', req.body);
 
@@ -34,52 +33,6 @@ export const weather = (appId, store, wuser, wpassword, token) =>
       messages.send(spaceId,
         message.title, message.text, message.actor, token());
     };
-    
-    const doWeather = (astate, user, cb) => {
-      // Get the weather conditions
-      twc.conditions(astate.city,
-        wuser, wpassword, (err, conditions) => {
-          if(err) {
-            return;
-          }
-          if(!conditions.geo && conditions.geo.city) {
-            // Tell the user that the given city couldn't be found
-            send(cityNotFound(astate.city, user));
-            return;
-          }
-
-          // Return the weather conditions
-          send(weatherConditions(conditions, user));
-
-          // Reset the weather action as it's now complete
-          delete astate.intent;
-          delete astate.city;
-          cb(null, astate);
-        });
-    }
-    
-    const doForecast = (astate, user, cb) => {
-      // Get a weather forecast
-      twc.forecast5d(astate.city,
-        wuser, wpassword, (err, forecast) => {
-          if(err) {
-            return;
-          }
-          if(!forecast.geo && forecast.geo.city) {
-            // Tell the user that the given city couldn't be found
-            send(cityNotFound(astate.city, user));
-            return;
-          }
-
-          // Return weather forecast
-          send(weatherForecast(forecast, user));
-
-          // Reset the weather action as it's now complete
-          delete astate.intent;
-          delete astate.city;
-          cb(null, astate);
-        });
-    }
 
     // Respond to the Webhook right away, as any response messages will
     // be sent asynchronously
@@ -88,200 +41,30 @@ export const weather = (appId, store, wuser, wpassword, token) =>
     // handles action fulfillment annotations
     events.onActionSelected(req.body, appId,
       (actionId, action, userId) => {
-      	if (actionId !== 'Get_Weather_Conditions' && actionId !== 'Get_Weather_Forecast') {
-      	 return;
+        const args = actionId.split(' ');
+      	switch(args[0]) {
+          case '/messages':
+            handleCommand(action, userId, token);
+            break;
         }
-        send({ text: `[Oauth for google stuff](${googleClient.authorizeUrl})` });
-        messages.annotationAF(
-      	  action.conversationId,
-      	  userId,
-      	  action.targetDialogId,
-      	  'Is this a weather request?',
-      	  `Watson recognized a weather request, you can confirm or cancel.`,
-      	  token()
-      	);
       });
-
-    // Handles identification of intents within a Watson Workspace message
-    events.onIntent(req.body, appId, token,
-      (intent, focus, message, user) => {
-
-        // Run with any previously saved action state
-        state.run(spaceId, user.id, store, (astate, cb) => {
-          // Remember the action being requested and the message that
-          // requested it
-          astate.message = message;
-          if(intent === 'weather' || intent === 'forecast')
-            astate.intent = intent;
-
-          // Proceed with the action and send the weather conditions or a
-          // weather forecast
-          if(intent === 'confirmation' && astate.city) {
-
-            if(astate.intent === 'weather') {
-              doWeather(astate, user, cb);
-              return;
-            }
-
-            if(astate.intent === 'forecast') {
-              doForecast(astate, user, cb);
-              return;
-            }
-          }
-
-          // Cancel the action
-          if((astate.intent === 'weather' ||
-            astate.intent === 'forecast') &&
-            intent === 'negation') {
-            send(noProblem(user));
-
-            // Forget the weather action and city as that was not what the
-            // user wanted
-            delete astate.intent;
-            delete astate.city;
-            cb(null, astate);
-          }
-
-          // Look for a city in the request, default to last city used
-          const city =
-            cityAndState(focus.extractedInfo.entities) || astate.city;
-
-          if(city) {
-            // Remember the city
-            astate.city = city;
-
-            // Ask the user to confirm
-            if(intent === 'weather')
-              send(confirmConditions(city, user));
-
-            else if(intent === 'forecast')
-              send(confirmForecast(city, user));
-          }
-          else {
-            // Need a city, ask for it
-            log('******************************** Received extracted entities: %o', focus.extractedInfo.entities);
-            send(whichCity(user));
-          }
-
-
-          // Return the new action state
-          cb(null, astate);
-        });
-      });
-
-    // Handle mentions of entities in messages
-    events.onEntities(req.body, appId, token,
-        (entities, nlp, message, user) => {
-
-          // Run with any previously saved action state
-          state.run(spaceId, user.id, store, (astate, cb) => {
-
-            // Look for a city and state in the extracted entities
-            const city = cityAndState(entities);
-            if(city) {
-              astate.city = city;
-              if(message.id !== astate.message.id)
-
-                // Ask for a confirmation to get the weather conditions or
-                // weather forecast in the recognized city
-                if(astate.intent === 'weather')
-                  send(confirmConditions(city, user));
-
-                else if(astate.intent === 'forecast')
-                  send(confirmForecast(city, user));
-            }
-
-            // Return the new action state
-            cb(null, astate);
-          });
-        });
   };
 
-// Extract and combine city and state from a list of NL entities
-const cityAndState = (entities) => {
-  const city =
-    (entities.filter((e) => e.type === 'Location')[0] || {}).text;
-  return city;
-};
-
-// The various messages the application sends
-
-// Weather conditions
-const weatherConditions = (w, user) => ({
-  title: 'Weather Conditions',
-  text: util.format('%s\n%sF Feels like %sF\n%s%s',
-    [w.geo.city, w.geo.adminDistrictCode].join(', '),
-    w.observation.temp,
-    w.observation.feels_like,
-    w.observation.wx_phrase,
-    w.observation.terse_phrase ?
-      '. ' + w.observation.terse_phrase : ''),
-  actor: 'The Weather Company'
-});
-
-// Weather forecast
-const weatherForecast = (w, user) => ({
-  title: 'Weather Forecast',
-  text: util.format('%s%s',
-    [w.geo.city, w.geo.adminDistrictCode].join(', '),
-    w.forecasts.reduce((a, f) => a +
-      util.format('\n%s %sF %sF %s',
-        f.dow.slice(0, 3),
-        f.max_temp || '--', f.min_temp || '--',
-        f.narrative.split('.')[0]),
-      '')),
-  actor: 'The Weather Company'
-});
-
-// Ask for a confirmation to get the weather conditions
-const confirmConditions = (city, user) => ({
-  text: util.format(
-    'Hey %s, I think you\'re looking for the weather conditions ' +
-   'in %s.\nIs that correct?', user.displayName, city)
-});
-
-// Ask for a confirmation to get a weather forecast
-const confirmForecast = (city, user) => ({
-  text: util.format(
-    'Hey %s, I think you\'re looking for a weather forecast in %s.\n' +
-    'Is that correct?', user.displayName, city)
-});
-
-// Ask which city to get weather for
-const whichCity = (user) => ({
-  text: util.format(
-    'Hey %s, I can get the weather for you but I need a city name.\nYou can ' +
-    'say San Francisco, or Littleton, MA for example.', user.displayName)
-});
-
-// Ask to clarify a city that cannot be found
-const cityNotFound = (city, user) => ({
-  text: util.format(
-    'Hey %s, I couldn\'t find %s, I need a valid city.',
-    user.displayName, city)
-});
-
-// Say OK
-const noProblem = (user) => ({
-  text: util.format('OK %s, no problem.', user.displayName)
-});
-
-//const gmail = google.gmail({
-//  version: 'v1',
-//  auth: googleClient.oAuth2Client
-//});
-//
-//function getMail() {
-//  return gmail.users.messages.list({ userId: 'me' })
-//    .then(res => res.data)
-//    .catch(e => {
-//      if (e.)
-//	});
-//}
+const handleCommand = (action, userId, token) => {
+  send({ text: `[Log in to Gmail](${googleClient.authorizeUrl})` });
+  messages.sendTargeted(
+    action.conversationId,
+    userId,
+    action.targetDialogId,
+    'Your Messages',
+    `This is where your messages would show up`,
+    token()
+  );
+}
 
 // Create Express Web app
 export const webapp =
-  (appId, secret, whsecret, store, wuser, wpassword, cb) => {
+  (appId, secret, whsecret, store, cb) => {
     // Authenticate the app and get an OAuth token
     oauth.run(appId, secret, (err, token) => {
       if(err) {
@@ -294,7 +77,7 @@ export const webapp =
       
       const app = express();
       // Configure Express route for the app Webhook
-      app.post('/weather',
+      app.post('/messages',
 
         // Verify Watson Work request signature and parse request body
         bparser.json({
@@ -306,7 +89,10 @@ export const webapp =
         sign.challenge(whsecret),
 
         // Handle Watson Work Webhook events
-        weather(appId, state.store(store), wuser, wpassword, token));
+        messages(appId, state.store(store), token));
+
+      // google will call this endpoint after a user completes their authentication,
+      // then this app will complete the OAuth2 handshake by getting an access token from google
       app.get('/oauth2callback', googleClient.handleCallback);
 
       // Return the Express Web app
@@ -320,12 +106,11 @@ export const webapp =
 const main = (argv, env, cb) => {
   // Create Express Web app
   webapp(
-    env.WEATHER_APP_ID,
-    env.WEATHER_APP_SECRET,
-    env.WEATHER_WEBHOOK_SECRET,
-    env.WEATHER_STORE,
-    env.WEATHER_TWC_USER,
-    env.WEATHER_TWC_PASSWORD, (err, app) => {
+    env.WW_APP_ID,
+    env.WW_APP_SECRET,
+    env.WW_WEBHOOK_SECRET,
+    env.WW_STORE,
+    (err, app) => {
       if(err) {
         cb(err);
         return;

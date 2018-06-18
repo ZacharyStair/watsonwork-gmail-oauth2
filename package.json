@@ -1,21 +1,22 @@
 {
   "name": "watsonwork-weather",
-  "description": "A sample app that listens to messages posted to a space in IBM Watson Workspace and implements actions that return the weather",
+  "description": "A sample app that listens to messages posted to a space in IBM Watson Workspace and implements actions that authorize with google and return the user's messages",
   "license": "Apache-2.0",
   "version": "0.0.1",
-  "homepage": "https://github.com/watsonwork/watsonwork-weather",
+  "homepage": "https://github.com/ZacharyStair/watsonwork-gmail-oauth2",
   "bugs": {
-    "url": "https://github.com/watsonwork/watsonwork-weather"
+    "url": "https://github.com/ZacharyStair/watsonwork-gmail-oauth2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/watsonwork/watsonwork-weather.git"
+    "url": "https://github.com/ZacharyStair/watsonwork-gmail-oauth2.git"
   },
   "keywords": [
     "watson",
     "work",
     "sample",
-    "weather"
+    "gmail",
+    "oauth"
   ],
   "files": [
     ".npmrc",
