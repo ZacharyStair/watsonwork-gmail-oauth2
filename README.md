@@ -35,11 +35,11 @@ environment and build it yourself. Just click the button below:
 [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/ZacharyStair/watsonwork-gmail-oauth2&branch=master)
 
 > Note: it is likely that the pipeline step failed to automatically configure,
-> you can create your own by adding a pipeline step with two phases: 'build'
-> and 'deploy'.
+> you can create your own by adding a pipeline stage with two jobs: 'build'
+> and 'deploy' (or two different stages with one job each).
 > 
-> For the build step, choose 'npm' as the build type and replace
-> the build code with the following (obtained from .bluemix/pipeline.yml):
+> For the build step, choose 'npm' as the 'builder type' and replace
+> the build script with the following (obtained from .bluemix/pipeline.yml):
 > ```
 > #!/bin/bash
 > export PATH=/opt/IBM/node-v6.2.2/bin:$PATH
@@ -47,7 +47,9 @@ environment and build it yourself. Just click the button below:
 > npm install
 > npm run babel
 > ```
-> feel free to double check the other settings, but the default values should be fine.
+> The defaults are fine for the other steps, though you can decrease the amount of memory
+> the app uses (it is very lightweight) by changing the deploy command to
+> `cf push -m 256M "${CF_APP}"`
 
 Once that's done, go to your
 [Bluemix Dashboard](https://console.ng.bluemix.net/dashboard/cf-apps). The

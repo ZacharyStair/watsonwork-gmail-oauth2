@@ -27,13 +27,6 @@ export const messages = (appId, store, token) =>
     // Get the space containing the conversation that generated the event
     const spaceId = req.body.spaceId;
 
-    // A utility function that sends a message back to the conversation in
-    // that space
-    const send = (message) => {
-      messages.send(spaceId,
-        message.title, message.text, message.actor, token());
-    };
-
     // Respond to the Webhook right away, as any response messages will
     // be sent asynchronously
     res.status(201).end();
@@ -44,14 +37,14 @@ export const messages = (appId, store, token) =>
         const args = actionId.split(' ');
       	switch(args[0]) {
           case '/messages':
-            handleCommand(action, userId, token);
+            handleCommand(action, userId, spaceId, token);
             break;
         }
       });
   };
 
-const handleCommand = (action, userId, token) => {
-  send({ text: `[Log in to Gmail](${googleClient.authorizeUrl})` });
+const handleCommand = (action, userId, spaceId, token) => {
+  messages.send(spaceId, null, `[Log in to Gmail](${googleClient.authorizeUrl})`, null, token());
   messages.sendTargeted(
     action.conversationId,
     userId,
