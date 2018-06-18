@@ -40,8 +40,8 @@ export const run = (userId, store, fn, cb) => {
   get(userId, store, (err, ostate) => {
 
     // Run the action function
-    fn(ostate || {}, (err, nstate) => {
-      if(err)
+    fn(err, ostate || {}, (fnErr, nstate) => {
+      if(fnErr)
         return;
       // Store the new action state
       put(userId, nstate, store, cb);
