@@ -20,7 +20,7 @@ import debug from 'debug';
 const log = debug('watsonwork-messages-app');
 
 // Handle events sent to the Weather action Webhook at /messages
-export const messagesCallback = (appId, store, token) =>
+export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
     // log('Received body %o', req.body);
 
@@ -37,36 +37,40 @@ export const messagesCallback = (appId, store, token) =>
         const args = actionId.split(' ');
       	switch(args[0]) {
           case '/messages':
-            handleCommand(action, userId, spaceId, token);
+            handleCommand(action, userId, spaceId, wwToken);
             break;
         }
       });
   };
 
-const handleCommand = (action, userId, spaceId, token) => {
-  messages.send(spaceId, null, `[Log in to Gmail](${googleClient.authorizeUrl})`, null, token());
+const handleCommand = (action, userId, spaceId, wwToken) => {
   messages.sendTargeted(
     action.conversationId,
     userId,
     action.targetDialogId,
     'Your Messages',
     `This is where your messages would show up`,
-    token()
+    wwToken()
   );
+}
+
+const beginReauth = (wwToken) => (spaceId, userId) => {
+  const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
+  googleClient.makeAuthorizeUrl(userId, scopes);
+  messages.send(spaceId, null, `[Log in to Gmail](${googleClient.authorizeUrl})`, null, wwToken());
 }
 
 // Create Express Web app
 export const webapp =
-  (appId, secret, whsecret, store, cb) => {
+  (appId, secret, whsecret, initialStore, cb) => {
     // Authenticate the app and get an OAuth token
-    oauth.run(appId, secret, (err, token) => {
+    oauth.run(appId, secret, (err, wwToken) => {
       if(err) {
         cb(err);
         return;
       }
 
-      const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
-      googleClient.makeAuthorizeUrl(scopes);
+      const store = state.store(initialStore);
       
       const app = express();
       // Configure Express route for the app Webhook
@@ -81,12 +85,14 @@ export const webapp =
         // Handle Watson Work Webhook challenge requests
         sign.challenge(whsecret),
 
+        googleClient.checkToken(store, beginReauth(wwToken)),
+
         // Handle Watson Work Webhook events
-        messagesCallback(appId, state.store(store), token));
+        messagesCallback(appId, store, wwToken));
 
       // google will call this endpoint after a user completes their authentication,
       // then this app will complete the OAuth2 handshake by getting an access token from google
-      app.get('/oauth2callback', googleClient.handleCallback);
+      app.get('/oauth2callback', googleClient.handleCallback(store));
 
       // Return the Express Web app
       cb(null, app);

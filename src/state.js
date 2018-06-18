@@ -5,7 +5,7 @@ import memdown from 'memdown';
 import debug from 'debug';
 
 // Setup debug log
-const log = debug('watsonwork-weather-state');
+const log = debug('watsonwork-messages-state');
 
 // Return a store that can be used to persist action state
 export const store = (uri = 'state') => {
@@ -14,18 +14,18 @@ export const store = (uri = 'state') => {
 };
 
 // Get the action state for a space / user / dialog
-export const get = (spaceId, userId, store, cb) => {
-  log('Getting action state for %s %s', spaceId, userId);
-  store.get([spaceId, userId].join('-'), (err, res) => {
+export const get = (userId, store, cb) => {
+  log('Getting action state for %s', userId);
+  store.get(userId, (err, res) => {
     log('Get err %o result %o', err, res);
     cb(err, res);
   });
 };
 
 // Store the action state for a space / user / dialog
-export const put = (spaceId, userId, astate, store, cb) => {
-  astate._id = [spaceId, userId].join('-');
-  log('Putting action state for %s %s %o', spaceId, userId, astate);
+export const put = (userId, astate, store, cb) => {
+  astate._id = userId;
+  log('Putting action state for %s %o', userId, astate);
   store.put(astate, (err, res) => {
     log('Put err %o result %o', err, res);
     if(cb)
@@ -35,16 +35,16 @@ export const put = (spaceId, userId, astate, store, cb) => {
 
 // Run an action function with a state, i.e. a function that takes an action
 // state and calls back with a new state
-export const run = (spaceId, userId, store, fn, cb) => {
+export const run = (userId, store, fn, cb) => {
   // Get the action state
-  get(spaceId, userId, store, (err, ostate) => {
+  get(userId, store, (err, ostate) => {
 
     // Run the action function
     fn(ostate || {}, (err, nstate) => {
       if(err)
         return;
       // Store the new action state
-      put(spaceId, userId, nstate, store, cb);
+      put(userId, nstate, store, cb);
     });
   });
 };
