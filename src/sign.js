@@ -6,7 +6,7 @@ import { createHmac } from 'crypto';
 import debug from 'debug';
 
 // Debug log
-const log = debug('watsonwork-weather-sign');
+const log = debug('watsonwork-messages-sign');
 
 // Verify Watson Work request signature
 export const verify = (wsecret) => (req, res, buf, encoding) => {

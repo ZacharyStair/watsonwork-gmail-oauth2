@@ -2,7 +2,6 @@
 // Watson Workspace and implements actions that return the user's messages.
 
 import express from 'express';
-import * as util from 'util';
 import * as bparser from 'body-parser';
 import * as http from 'http';
 import * as https from 'https';

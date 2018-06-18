@@ -6,7 +6,7 @@ import assert from 'assert';
 import debug from 'debug';
 
 // Setup debug log
-const log = debug('watsonwork-weather-graphql');
+const log = debug('watsonwork-messages-graphql');
 
 // Run the given GraphQL query
 export const query = (q, token, cb) => {

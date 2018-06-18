@@ -2,7 +2,7 @@
 import debug from 'debug';
 
 // Setup debug log
-const log = debug('watsonwork-weather-events');
+const log = debug('watsonwork-messages-events');
 
 export const onActionSelected = (evt, appId, cb) => {
   if (evt.type === 'message-annotation-added' &&

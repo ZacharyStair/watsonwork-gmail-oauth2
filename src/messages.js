@@ -6,7 +6,7 @@ import * as request from 'request';
 import debug from 'debug';
 
 // Setup debug log
-const log = debug('watsonwork-weather-messages');
+const log = debug('watsonwork-messages-messages');
 
 // Return message with the given id
 export const message = (messageId, token, cb) => {
