@@ -20,7 +20,7 @@ import debug from 'debug';
 const log = debug('watsonwork-messages-app');
 
 // Handle events sent to the Weather action Webhook at /messages
-export const messages = (appId, store, token) =>
+export const messagesCallback = (appId, store, token) =>
   (req, res) => {
     // log('Received body %o', req.body);
 
@@ -82,7 +82,7 @@ export const webapp =
         sign.challenge(whsecret),
 
         // Handle Watson Work Webhook events
-        messages(appId, state.store(store), token));
+        messagesCallback(appId, state.store(store), token));
 
       // google will call this endpoint after a user completes their authentication,
       // then this app will complete the OAuth2 handshake by getting an access token from google
