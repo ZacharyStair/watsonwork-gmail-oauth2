@@ -2,7 +2,7 @@
 import { google } from 'googleapis';
 import querystring from 'querystring';
 import url from 'url';
-import state from './state';
+import * as state from './state';
 
 class GoogleClient {
   constructor() {
