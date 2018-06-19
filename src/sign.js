@@ -10,7 +10,7 @@ const log = debug('watsonwork-messages-sign');
 
 // Verify Watson Work request signature
 export const verify = (wsecret) => (req, res, buf, encoding) => {
-  log('++++++++++++++++++++++++++++++ Verifying request: %o', req);
+  if (req.get) log('Verifying request, getting token using: %s', req.get.name);
   if(req.get('X-OUTBOUND-TOKEN') !==
     createHmac('sha256', wsecret).update(buf).digest('hex')) {
     log('Invalid request signature');
