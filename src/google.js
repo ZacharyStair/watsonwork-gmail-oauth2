@@ -29,6 +29,7 @@ class GoogleClient {
       res.end('************************** handling google oauth callback ****************************');
       return this.oAuth2Client.getToken(qs.code).then(body => {
         state.run(qs.state, store, (err, ostate, cb) => {
+          log('updating token, error %o old state %o', err, ostate);
           if (err || !ostate.next) {
             // request may have originated from a different user
             cb(err);
@@ -61,7 +62,8 @@ class GoogleClient {
         }
         this.oAuth2Client.getTokenInfo(userState.token)
           .then(next)
-          .catch(() => {
+          .catch((oauthInfoError) => {
+            log('Oauth err %o', oauthInfoError);
             state.put(userId, { next }, store, () => reauth(spaceId, userId));
           });
       });
