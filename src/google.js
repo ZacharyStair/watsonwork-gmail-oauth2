@@ -28,11 +28,13 @@ class GoogleClient {
     return (req, res, next) => {
       const qs = querystring.parse(url.parse(req.url).query);
       return this.oAuth2Client.getToken(qs.code).then(body => {
+        log('got tokens for %o, body: %o', qs, body);
         // qs.state is the userId from above
         state.run(qs.state, store, (err, ostate, put) => {
           log('updating token, error %o old state %o', err, ostate);
           if (err) {
             // request may have originated from a different user
+            res.status(403).end();
             put(err);
             return;
           }
@@ -75,6 +77,7 @@ class GoogleClient {
       }
 
       state.get(userId, store, (e, userState) => {
+        log('get existing state for user: %o, err: %o', userState, e);
         if (e || !userState.token) {
           storeAction();
           return;
