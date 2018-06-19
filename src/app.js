@@ -4,6 +4,7 @@
 import debug from 'debug';
 import express from 'express';
 import querystring from 'querystring';
+import url from 'url';
 import * as bparser from 'body-parser';
 import * as http from 'http';
 import * as https from 'https';
