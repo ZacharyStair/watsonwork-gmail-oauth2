@@ -2,6 +2,7 @@
 import { google } from 'googleapis';
 import querystring from 'querystring';
 import url from 'url';
+import * as events from './events';
 import * as state from './state';
 
 class GoogleClient {
@@ -24,22 +25,21 @@ class GoogleClient {
   }
 
   handleCallback(store) {
-    return (req, res) => {
+    return (req, res, next) => {
       const qs = querystring.parse(url.parse(req.url).query);
-      res.end('************************** handling google oauth callback ****************************');
       return this.oAuth2Client.getToken(qs.code).then(body => {
-        state.run(qs.state, store, (err, ostate, cb) => {
+        // qs.state is the userId from above
+        state.run(qs.state, store, (err, ostate, put) => {
           log('updating token, error %o old state %o', err, ostate);
-          if (err || !ostate.next) {
+          if (err) {
             // request may have originated from a different user
-            cb(err);
+            put(err);
             return;
           }
-          const newState = { tokens: body.tokens };
-          cb(null, newState);
+          const newState = { ...ostate, tokens: body.tokens };
+          put(null, newState);
           // we were in the middle of an action flow, continue...
-          ostate.next();
-        });
+        }, next);
         // don't necessarily rely on these credentials, because the oAuth2Client is a singleton.
         // the pouchdb store keeps track of each user's tokens.
         this.oAuth2Client.credentials = body.tokens;
@@ -52,19 +52,38 @@ class GoogleClient {
    * @param {PouchDB} store
    * @param {function} reauth - function to call if the user needs to reauth.
    */
-  checkToken(store, reauth) {
+  checkToken(appId, store, reauth) {
     return (req, res, next) => {
       const { userId, spaceId } = req.body;
+      // if the user is not authenticated, store what they were trying to do
+      // in pouch so they can pick it back up when they finish authenticating.
+      const storeAction = () => {
+        events.onActionSelected(req.body, appId, (actionId, action) => {
+          const args = actionId.split(' ');
+          state.put(
+            userId,
+            {
+              actionType: args[0],
+              action,
+              spaceId
+            },
+            store,
+            () => reauth(spaceId, userId)
+          );
+        });
+        res.status(401).end();
+      }
+
       state.get(userId, store, (e, userState) => {
         if (e || !userState.token) {
-          state.put(userId, { next }, store, () => reauth(spaceId, userId));
+          storeAction();
           return;
         }
         this.oAuth2Client.getTokenInfo(userState.token)
           .then(next)
           .catch((oauthInfoError) => {
             log('Oauth err %o', oauthInfoError);
-            state.put(userId, { next }, store, () => reauth(spaceId, userId));
+            storeAction();
           });
       });
     }

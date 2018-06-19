@@ -21,7 +21,7 @@ const log = debug('watsonwork-messages-app');
 // Handle events sent to the Weather action Webhook at /messages
 export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
-    // log('Received body %o', req.body);
+    log('Received body %o', req.body);
 
     // Get the space containing the conversation that generated the event
     const spaceId = req.body.spaceId;
@@ -41,6 +41,27 @@ export const messagesCallback = (appId, store, wwToken) =>
         }
       });
   };
+
+export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
+  log('completed oauth flow, resuming user action...');
+  res.status(201).end();
+
+  const userId = querystring.parse(url.parse(req.url).query).state;
+  state.run(userId, store, (err, ostate, put) => {
+    log('completing user action with state %o error %o', ostate, err);
+    if (err) {
+      return;
+    }
+    const { actionType, action, spaceId, tokens } = ostate;
+    switch(actionType) {
+      case '/messages':
+        handleCommand(action, userId, spaceId, wwToken);
+        // once complete, remove state for user except for tokens
+        put(null, { tokens });
+        break;
+    }
+  })
+}
 
 const handleCommand = (action, userId, spaceId, wwToken) => {
   messages.sendTargeted(
@@ -84,14 +105,18 @@ export const webapp =
         // Handle Watson Work Webhook challenge requests
         sign.challenge(whsecret),
 
-        googleClient.checkToken(store, beginReauth(wwToken)),
+        googleClient.checkToken(appId, store, beginReauth(wwToken)),
 
         // Handle Watson Work Webhook events
-        messagesCallback(appId, store, wwToken));
+        messagesCallback(appId, store, wwToken)
+      );
 
       // google will call this endpoint after a user completes their authentication,
       // then this app will complete the OAuth2 handshake by getting an access token from google
-      app.get('/oauth2callback', googleClient.handleCallback(store));
+      app.get('/oauth2callback',
+        googleClient.handleCallback(store),
+        messagesCallback(appId, store, wwToken)
+      );
 
       // Return the Express Web app
       cb(null, app);
