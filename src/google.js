@@ -5,6 +5,9 @@ import url from 'url';
 import * as events from './events';
 import * as state from './state';
 
+// Setup debug log
+const log = debug('watsonwork-messages-google');
+
 class GoogleClient {
   constructor() {
   	this.oAuth2Client = new google.auth.OAuth2(
