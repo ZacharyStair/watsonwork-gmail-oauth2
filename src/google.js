@@ -56,13 +56,13 @@ class GoogleClient {
       const { userId, spaceId } = req.body;
       state.get(userId, store, (e, userState) => {
         if (e || !userState.token) {
-          state.put(userId, { next }, () => reauth(spaceId, userId));
+          state.put(userId, { next }, store, () => reauth(spaceId, userId));
           return;
         }
         this.oAuth2Client.getTokenInfo(userState.token)
           .then(next)
           .catch(() => {
-            state.put(userId, { next }, () => reauth(spaceId, userId));
+            state.put(userId, { next }, store, () => reauth(spaceId, userId));
           });
       });
     }
