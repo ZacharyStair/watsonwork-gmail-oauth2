@@ -1,7 +1,9 @@
 // A sample app that listens to messages posted to a space in IBM
 // Watson Workspace and implements actions that return the user's messages.
 
+import debug from 'debug';
 import express from 'express';
+import querystring from 'querystring';
 import * as bparser from 'body-parser';
 import * as http from 'http';
 import * as https from 'https';
@@ -13,7 +15,6 @@ import * as events from './events';
 import * as state from './state';
 import googleClient from './google';
 // import { google } from 'googleapis';
-import debug from 'debug';
 
 // Debug log
 const log = debug('watsonwork-messages-app');
