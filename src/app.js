@@ -115,7 +115,7 @@ export const webapp =
       // then this app will complete the OAuth2 handshake by getting an access token from google
       app.get('/oauth2callback',
         googleClient.handleCallback(store),
-        messagesCallback(appId, store, wwToken)
+        oauthCompleteCallback(store, wwToken)
       );
 
       // Return the Express Web app
