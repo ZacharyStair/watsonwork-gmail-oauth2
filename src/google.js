@@ -36,7 +36,7 @@ class GoogleClient {
             put(err);
             return;
           }
-          const newState = { ...ostate, tokens: body.tokens };
+          const newState = Object.assign({}, ostate, { tokens: body.tokens });
           put(null, newState);
           // we were in the middle of an action flow, continue...
         }, next);
