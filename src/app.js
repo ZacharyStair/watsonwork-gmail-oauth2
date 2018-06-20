@@ -41,11 +41,11 @@ export const messagesCallback = (appId, store, wwToken) =>
     // Respond to the Webhook right away, as any response messages will
     // be sent asynchronously
     res.status(201).end();
+    events.onActionSelected(req.body, appId,
+      (actionId, action, userId) => {
 
-    state.get(userId, store, (err, userState) => {
-      // handles action fulfillment annotations
-      events.onActionSelected(req.body, appId,
-        (actionId, action, userId) => {
+        state.get(userId, store, (err, userState) => {
+            // handles action fulfillment annotations
           const args = actionId.split(' ');
           switch(args[0]) {
             case '/messages':
