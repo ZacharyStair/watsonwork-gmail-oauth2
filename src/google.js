@@ -46,10 +46,8 @@ class GoogleClient {
           put(null, newState, next);
           // we were in the middle of an action flow, continue...
         });
-        // don't necessarily rely on these credentials,
-        // because the oAuth2Client is a singleton.
+        // don't necessarily store the credentials in this.oAuth2Client because it is a singleton.
         // the pouchdb store keeps track of each user's tokens.
-        this.oAuth2Client.credentials = body.tokens;
       });
     };
   }

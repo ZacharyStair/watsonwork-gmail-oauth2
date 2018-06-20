@@ -15,20 +15,24 @@ import * as messages from './messages';
 import * as events from './events';
 import * as state from './state';
 import googleClient from './google';
-// import { google } from 'googleapis';
+import { google } from 'googleapis';
+
+const gmail = google.gmail({ version: 'v1' });
 
 // Debug log
 const log = debug('watsonwork-messages-app');
 
-const handleCommand = (action, userId, wwToken) => {
-  messages.sendTargeted(
-    action.conversationId,
-    userId,
-    action.targetDialogId,
-    'Your Messages',
-    'This is where your messages would show up',
-    wwToken()
-  );
+const handleCommand = (action, userId, wwToken, gmailToken) => {
+  gmail.users.messages.list({ userId: 'me' }, { auth: gmailToken }).then(({ data }) => {
+    messages.sendTargeted(
+      action.conversationId,
+      userId,
+      action.targetDialogId,
+      'Your Messages',
+      JSON.stringify(data),
+      wwToken()
+    );
+  });
 };
 
 // Handle events sent to the Weather action Webhook at /messages
@@ -39,17 +43,19 @@ export const messagesCallback = (appId, store, wwToken) =>
     // Respond to the Webhook right away, as any response messages will
     // be sent asynchronously
     res.status(201).end();
-    
-    // handles action fulfillment annotations
-    events.onActionSelected(req.body, appId,
-      (actionId, action, userId) => {
-        const args = actionId.split(' ');
-      	switch(args[0]) {
-          case '/messages':
-            handleCommand(action, userId, wwToken);
-            break;
-        }
-      });
+
+    state.get(userId, store, (err, userState) => {
+      // handles action fulfillment annotations
+      events.onActionSelected(req.body, appId,
+        (actionId, action, userId) => {
+          const args = actionId.split(' ');
+          switch(args[0]) {
+            case '/messages':
+              handleCommand(action, userId, wwToken, userState.tokens.access_token);
+              break;
+          }
+        });
+    });
   };
 
 export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
@@ -65,7 +71,7 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
     const { actionType, action, tokens } = ostate;
     switch(actionType) {
       case '/messages':
-        handleCommand(action, userId, wwToken);
+        handleCommand(action, userId, wwToken, tokens.access_token);
         // once complete, remove state for user except for tokens
         put(null, { _rev: ostate._rev, tokens });
         break;
