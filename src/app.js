@@ -15,15 +15,13 @@ import * as messages from './messages';
 import * as events from './events';
 import * as state from './state';
 import googleClient from './google';
-import { google } from 'googleapis';
-
-const gmail = google.gmail({ version: 'v1' });
 
 // Debug log
 const log = debug('watsonwork-messages-app');
 
-const handleCommand = (action, userId, wwToken, gmailToken) => {
-  gmail.users.messages.list({ userId: 'me' }, { auth: gmailToken }).then(({ data }) => {
+const handleCommand = (action, userId, wwToken, gmailTokens) => {
+  const gmail = googleClient.makeGmailInstance(gmailTokens);
+  gmail.users.messages.list({ userId: 'me' }).then(({ data }) => {
     messages.sendTargeted(
       action.conversationId,
       userId,
@@ -51,7 +49,7 @@ export const messagesCallback = (appId, store, wwToken) =>
           const args = actionId.split(' ');
           switch(args[0]) {
             case '/messages':
-              handleCommand(action, userId, wwToken, userState.tokens.access_token);
+              handleCommand(action, userId, wwToken, userState.tokens);
               break;
           }
         });
@@ -71,7 +69,7 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
     const { actionType, action, tokens } = ostate;
     switch(actionType) {
       case '/messages':
-        handleCommand(action, userId, wwToken, tokens.access_token);
+        handleCommand(action, userId, wwToken, tokens);
         // once complete, remove state for user except for tokens
         put(null, { _rev: ostate._rev, tokens });
         break;

@@ -28,6 +28,27 @@ class GoogleClient {
     });
   }
 
+  /**
+   * Our app handles tokens for multiple users, so we can create an 'oauth' client
+   * as needed for each user.
+   * This method isn't needed if you want to just use `request` and pass tokens directly
+   * @param {Object} tokens 
+   */
+  makeGmailInstance(tokens) {
+    // we likely don't need to pass all of the env variables again,
+    // but doing so allows the oauthClient to eagerly refresh the tokens if needed.
+    const newOauthClient = new google.auth.OAuth2(
+      process.env.GAPI_CLIENT_ID,
+      process.env.GAPI_CLIENT_SECRET,
+      process.env.GAPI_CLIENT_REDIRECT_URI
+    );
+    newOauthClient.credentials = tokens;
+    return google.gmail({
+      version: 'v1',
+      auth: newOauthClient
+    });
+  }
+
   handleCallback(store) {
     return (req, res, next) => {
       const qs = querystring.parse(url.parse(req.url).query);
