@@ -76,13 +76,14 @@ const handleCommand = (action, userId, wwToken) => {
 const beginReauth = (wwToken) => (action, userId) => {
   const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
   googleClient.makeAuthorizeUrl(userId, scopes);
-  messages.sendTargetedMessage(
+  messages.sendTargeted(
     action.conversationId,
     userId,
     action.targetedDialogId,
     'Please log in to Gmail',
     googleClient.authorizeUrl,
-    wwToken());
+    wwToken()
+  );
 }
 
 // Create Express Web app
