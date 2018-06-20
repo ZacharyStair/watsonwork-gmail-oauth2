@@ -100,7 +100,7 @@ export const sendTargeted = (
         }
         return;
       }
-      log('Send result: %s', body);
+      log('Send result: %o', body);
       if (cb) {
       	cb(null, body);
       }

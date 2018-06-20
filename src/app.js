@@ -67,7 +67,7 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
       case '/messages':
         handleCommand(action, userId, wwToken);
         // once complete, remove state for user except for tokens
-        put(null, { tokens });
+        put(null, { _rev: ostate._rev, tokens });
         break;
     }
   });
