@@ -84,7 +84,7 @@ class GoogleClient {
 
       state.get(userId, store, (e, userState) => {
         log('get existing state for user: %o, err: %o', userState, e);
-        if (e || !userState.tokens || !userState.access_token) {
+        if (e || !userState.tokens || !userState.tokens.access_token) {
           storeAction();
           return;
         }
