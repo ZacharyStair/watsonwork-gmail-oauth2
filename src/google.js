@@ -76,7 +76,7 @@ class GoogleClient {
             () => reauth(action, userId)
           );
         });
-        res.status(401).end();
+        res.status(201).end();
       }
 
       state.get(userId, store, (e, userState) => {
