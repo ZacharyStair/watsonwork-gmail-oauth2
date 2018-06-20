@@ -88,7 +88,9 @@ class GoogleClient {
           return;
         }
         this.oAuth2Client.getTokenInfo(userState.tokens.access_token)
-          .then((() => { next(); })
+          .then(() => {
+            next();
+          })
           .catch((oauthInfoError) => {
             log('Oauth err %o', oauthInfoError);
             storeAction(userState, put);
