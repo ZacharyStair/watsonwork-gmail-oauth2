@@ -80,33 +80,13 @@ export const sendTargeted = (
       conversationId: "%s"
       targetUserId: "%s"
       targetDialogId: "%s"
-      attachments: [
-      {
-        type: CARD,
-        cardInput: {
-        type: INFORMATION,
-        informationCardInput: {
+      annotations: [{
+        genericAnnotation: {
           title: "%s",
-          subtitle: "look, its a card!",
-          text: "%s",
-          date: "%d"
-          buttons: [
-            {
-                text: "Ok",
-                payload: "ok_button",
-                style: PRIMARY
-            },
-            {
-                text: "Cancel",
-                payload: "cancel_button",
-                style: SECONDARY
-            }
-          ]
+          text: "%s"
         }
-    	}
-      }
-      ]
-      }) {
+    	}]
+    }) {
       successful
     }
   }`, conversationId, targetUserId, targetDialogId, title, text, `${new Date().getTime()}`),

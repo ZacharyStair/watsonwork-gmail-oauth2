@@ -38,12 +38,12 @@ export const _put = (userId, astate, store, cb) => {
 
 // Run an action function with a state, i.e. a function that takes an action
 // state and calls back with a new state
-export const run = (userId, store, fn, cb) => {
+export const run = (userId, store, fn) => {
   // Get the action state
   get(userId, store, (err, ostate) => {
 
     // Run the action function
-    fn(err, ostate || {}, (fnErr, nstate) => {
+    fn(err, ostate || {}, (fnErr, nstate, cb) => {
       if (fnErr) {
         return;
       }
