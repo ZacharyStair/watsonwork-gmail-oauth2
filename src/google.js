@@ -60,7 +60,7 @@ class GoogleClient {
    */
   checkToken(appId, store, reauth) {
     return (req, res, next) => {
-      const { userId, spaceId } = req.body;
+      const { userId } = req.body;
       // if the user is not authenticated, store what they were trying to do
       // in pouch so they can pick it back up when they finish authenticating.
       const storeAction = () => {
@@ -70,11 +70,10 @@ class GoogleClient {
             userId,
             {
               actionType: args[0],
-              action,
-              spaceId
+              action
             },
             store,
-            () => reauth(spaceId, userId)
+            () => reauth(action, userId)
           );
         });
         res.status(401).end();

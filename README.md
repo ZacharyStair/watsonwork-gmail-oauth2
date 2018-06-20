@@ -152,12 +152,12 @@ You can skip this if you've just started the app on Bluemix.
 In the terminal window, do the following:
 ```
 # Configure the app id and app secret
-export WW_APP_ID<this app's id>                                     
-export WW_APP_SECRET<this app's secret>                             
-export WW_WEBHOOK_SECRET<this app's secret>
-export GAPI_CLIENT_ID<obtained from Google app dashboard>
-export GAPI_CLIENT_SECRET<obtained from Google app dashboard>
-export GAPI_CLIENT_REDIRECT_URI<obtained from Google app dashboard>
+export WW_APP_ID <this app's id>
+export WW_APP_SECRET <this app's secret>
+export WW_WEBHOOK_SECRET <this app's secret>
+export GAPI_CLIENT_ID <obtained from Google app dashboard>
+export GAPI_CLIENT_SECRET <obtained from Google app dashboard>
+export GAPI_CLIENT_REDIRECT_URI <obtained from Google app dashboard>
 ```
 
 The Watson Work platform requires Webhook endpoints to use HTTPS. The

@@ -25,9 +25,6 @@ export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
     log('Received body %o', req.body);
 
-    // Get the space containing the conversation that generated the event
-    const spaceId = req.body.spaceId;
-
     // Respond to the Webhook right away, as any response messages will
     // be sent asynchronously
     res.status(201).end();
@@ -38,7 +35,7 @@ export const messagesCallback = (appId, store, wwToken) =>
         const args = actionId.split(' ');
       	switch(args[0]) {
           case '/messages':
-            handleCommand(action, userId, spaceId, wwToken);
+            handleCommand(action, userId, wwToken);
             break;
         }
       });
@@ -54,10 +51,10 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
     if (err) {
       return;
     }
-    const { actionType, action, spaceId, tokens } = ostate;
+    const { actionType, action, tokens } = ostate;
     switch(actionType) {
       case '/messages':
-        handleCommand(action, userId, spaceId, wwToken);
+        handleCommand(action, userId, wwToken);
         // once complete, remove state for user except for tokens
         put(null, { tokens });
         break;
@@ -65,7 +62,7 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
   })
 }
 
-const handleCommand = (action, userId, spaceId, wwToken) => {
+const handleCommand = (action, userId, wwToken) => {
   messages.sendTargeted(
     action.conversationId,
     userId,
@@ -76,10 +73,16 @@ const handleCommand = (action, userId, spaceId, wwToken) => {
   );
 }
 
-const beginReauth = (wwToken) => (spaceId, userId) => {
+const beginReauth = (wwToken) => (action, userId) => {
   const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
   googleClient.makeAuthorizeUrl(userId, scopes);
-  messages.send(spaceId, null, `[Log in to Gmail](${googleClient.authorizeUrl})`, null, wwToken());
+  messages.sendTargetedMessage(
+    action.conversationId,
+    userId,
+    action.targetedDialogId,
+    'Please log in to Gmail',
+    googleClient.authorizeUrl,
+    wwToken());
 }
 
 // Create Express Web app
