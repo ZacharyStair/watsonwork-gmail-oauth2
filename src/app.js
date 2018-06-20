@@ -21,7 +21,7 @@ const log = debug('watsonwork-messages-app');
 
 const handleCommand = (action, userId, wwToken, gmailTokens) => {
   const gmail = googleClient.makeGmailInstance(gmailTokens);
-  gmail.users.messages.list({ userId: 'me' }).then(({ data }) => {
+  gmail.users.messages.list({ userId: 'me', fields: 'messages/snippet' }).then(({ data }) => {
     messages.sendTargeted(
       action.conversationId,
       userId,

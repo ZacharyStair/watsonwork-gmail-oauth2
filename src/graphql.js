@@ -50,7 +50,7 @@ export const query = (q, token, cb) => {
 
     if(body.errors && body.errors.length) {
       // GraphQL returned query errors
-      log('GraphQL query errors %o', body.errors);
+      log('GraphQL query errors %s', JSON.stringify(body.errors));
       cb({
         errors: body.errors,
         message: 'GraphQL query errors'
