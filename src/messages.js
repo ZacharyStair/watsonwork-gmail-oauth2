@@ -89,7 +89,7 @@ export const sendTargeted = (
     }) {
       successful
     }
-  }`, conversationId, targetUserId, targetDialogId, title, text, `${new Date().getTime()}`),
+  }`, conversationId, targetUserId, targetDialogId, title, text),
     token, (err, res) => {
       if (err) {
         if (err.errors) {
