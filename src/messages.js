@@ -90,18 +90,19 @@ export const sendTargeted = (
       successful
     }
   }`, conversationId, targetUserId, targetDialogId, title, text),
-    token, (err, res) => {
+    token, (err, body) => {
       if (err) {
-        if (err.errors) {
+        if (err.errors && cb) {
           cb(null, {});
           return;
+        } else if (cb) {
+          cb(err);
         }
-        cb(err);
         return;
       }
-      log('Send result %d, %o', res.statusCode, res.body);
+      log('Send result: %s', body);
       if (cb) {
-      	cb(null, res.body);
+      	cb(null, body);
       }
     });
 };

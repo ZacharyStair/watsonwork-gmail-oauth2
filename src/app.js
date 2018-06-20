@@ -79,7 +79,7 @@ const beginReauth = (wwToken) => (action, userId) => {
   messages.sendTargeted(
     action.conversationId,
     userId,
-    action.targetedDialogId,
+    action.targetDialogId,
     'Please log in to Gmail',
     googleClient.authorizeUrl,
     wwToken()
