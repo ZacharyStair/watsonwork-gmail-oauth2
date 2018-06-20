@@ -66,13 +66,16 @@ class GoogleClient {
       const storeAction = () => {
         events.onActionSelected(req.body, appId, (actionId, action) => {
           const args = actionId.split(' ');
-          state.put(
+          state.run(
             userId,
-            {
-              actionType: args[0],
-              action
-            },
             store,
+            (err, ostate, put) => {
+              put(err, Object.assign({}, ostate, {
+                actionType: args[0],
+                action,
+                tokens: null
+              }));
+            },
             () => reauth(action, userId)
           );
         });
@@ -81,11 +84,11 @@ class GoogleClient {
 
       state.get(userId, store, (e, userState) => {
         log('get existing state for user: %o, err: %o', userState, e);
-        if (e || !userState.token) {
+        if (e || !userState.tokens || !userState.access_token) {
           storeAction();
           return;
         }
-        this.oAuth2Client.getTokenInfo(userState.token)
+        this.oAuth2Client.getTokenInfo(userState.tokens)
           .then(next)
           .catch((oauthInfoError) => {
             log('Oauth err %o', oauthInfoError);

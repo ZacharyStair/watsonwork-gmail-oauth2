@@ -23,7 +23,9 @@ export const get = (userId, store, cb) => {
 };
 
 // Store the action state for a space / user / dialog
-export const put = (userId, astate, store, cb) => {
+// Note, pouch will reject puts that don't include the `_rev` field,
+// so you probably want to use `state.run`
+export const _put = (userId, astate, store, cb) => {
   astate._id = userId;
   log('Putting action state for %s %o', userId, astate);
   store.put(astate, (err, res) => {
@@ -44,7 +46,7 @@ export const run = (userId, store, fn, cb) => {
       if(fnErr)
         return;
       // Store the new action state
-      put(userId, nstate, store, cb);
+      _put(userId, nstate, store, cb);
     });
   });
 };
