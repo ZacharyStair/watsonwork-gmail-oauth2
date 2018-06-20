@@ -43,9 +43,9 @@ class GoogleClient {
             return;
           }
           const newState = Object.assign({}, ostate, { tokens: body.tokens });
-          put(null, newState);
+          put(null, newState, next);
           // we were in the middle of an action flow, continue...
-        }, next);
+        });
         // don't necessarily rely on these credentials,
         // because the oAuth2Client is a singleton.
         // the pouchdb store keeps track of each user's tokens.
@@ -64,37 +64,34 @@ class GoogleClient {
       const { userId } = req.body;
       // if the user is not authenticated, store what they were trying to do
       // in pouch so they can pick it back up when they finish authenticating.
-      const storeAction = () => {
+      const storeAction = (userState, put) => {
         events.onActionSelected(req.body, appId, (actionId, action) => {
           const args = actionId.split(' ');
-          state.run(
-            userId,
-            store,
-            (err, ostate, put) => {
-              // May need to handle conflicts; user authenticating on multiple clients?
-              put(null, Object.assign({}, ostate, {
+            // May need to handle conflicts; user authenticating on multiple clients?
+            put(
+              null,
+              Object.assign({}, userState, {
                 actionType: args[0],
                 action,
                 tokens: null
-              }));
-            },
-            () => reauth(action, userId)
-          );
+              }),
+              () => reauth(action, userId)
+            );
         });
         res.status(201).end();
       };
 
-      state.get(userId, store, (e, userState) => {
+      state.run(userId, store, (e, userState, put) => {
         log('get existing state for user: %o, err: %o', userState, e);
         if (e || !userState.tokens || !userState.tokens.access_token) {
-          storeAction();
+          storeAction(userState, put);
           return;
         }
         this.oAuth2Client.getTokenInfo(userState.tokens)
           .then(next)
           .catch((oauthInfoError) => {
             log('Oauth err %o', oauthInfoError);
-            storeAction();
+            storeAction(userState, put);
           });
       });
     };

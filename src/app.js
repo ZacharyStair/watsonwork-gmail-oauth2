@@ -20,6 +20,17 @@ import googleClient from './google';
 // Debug log
 const log = debug('watsonwork-messages-app');
 
+const handleCommand = (action, userId, wwToken) => {
+  messages.sendTargeted(
+    action.conversationId,
+    userId,
+    action.targetDialogId,
+    'Your Messages',
+    'This is where your messages would show up',
+    wwToken()
+  );
+};
+
 // Handle events sent to the Weather action Webhook at /messages
 export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
@@ -59,19 +70,8 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
         put(null, { tokens });
         break;
     }
-  })
-}
-
-const handleCommand = (action, userId, wwToken) => {
-  messages.sendTargeted(
-    action.conversationId,
-    userId,
-    action.targetDialogId,
-    'Your Messages',
-    `This is where your messages would show up`,
-    wwToken()
-  );
-}
+  });
+};
 
 const beginReauth = (wwToken) => (action, userId) => {
   const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
@@ -84,7 +84,7 @@ const beginReauth = (wwToken) => (action, userId) => {
     googleClient.authorizeUrl,
     wwToken()
   );
-}
+};
 
 // Create Express Web app
 export const webapp =
@@ -140,20 +140,18 @@ const main = (argv, env, cb) => {
     env.WW_WEBHOOK_SECRET,
     env.WW_STORE,
     (err, app) => {
-      if(err) {
+      if (err) {
         cb(err);
         return;
       }
 
-      if(env.PORT) {
+      if (env.PORT) {
         // In a hosting environment like Bluemix for example, HTTPS is
         // handled by a reverse proxy in front of the app, just listen
         // on the configured HTTP port
         log('HTTP server listening on port %d', env.PORT);
         http.createServer(app).listen(env.PORT, cb);
-      }
-
-      else
+      } else {
         // Listen on the configured HTTPS port, default to 443
         ssl.conf(env, (err, conf) => {
           if(err) {
@@ -164,12 +162,13 @@ const main = (argv, env, cb) => {
           log('HTTPS server listening on port %d', port);
           https.createServer(conf, app).listen(port, cb);
         });
+      }
     });
 };
 
 if (require.main === module) {
   main(process.argv, process.env, (err) => {
-    if(err) {
+    if (err) {
       console.log('Error starting app:', err);
       return;
     }

@@ -51,8 +51,7 @@ export const message = (messageId, token, cb) => {
         message = res.data.message;
         // Parse annotations
         message.annotations = message.annotations.map((a) => JSON.parse(a));
-      }
-      catch(err) {
+      } catch(err) {
         log('Error getting message %o', err);
         cb(null, {});
         return;
@@ -65,7 +64,15 @@ export const message = (messageId, token, cb) => {
     });
 };
 
-export const sendTargeted = (conversationId, targetUserId, targetDialogId, title, text, token, cb) => {
+export const sendTargeted = (
+  conversationId,
+  targetUserId,
+  targetDialogId,
+  title,
+  text,
+  token,
+  cb
+) => {
   log(`annotating dialog ${targetDialogId}`);
   graphql.query(util.format(`
   mutation {
@@ -105,7 +112,7 @@ export const sendTargeted = (conversationId, targetUserId, targetDialogId, title
   }`, conversationId, targetUserId, targetDialogId, title, text, `${new Date().getTime()}`),
     token, (err, res) => {
       if (err) {
-        if(err.errors) {
+        if (err.errors) {
           cb(null, {});
           return;
         }
@@ -147,15 +154,17 @@ export const send = (spaceId, title, text, actor, token, cb) => {
         }]
       }
     }, (err, res) => {
-      if(err || res.statusCode !== 201) {
+      if (err || res.statusCode !== 201) {
         log('Error sending message %o', err || res.statusCode);
-        if(cb)
+        if (cb) {
           cb(err || new Error(res.statusCode));
+        }
         return;
       }
       log('Send result %d, %o', res.statusCode, res.body);
-      if(cb)
+      if (cb) {
         cb(null, res.body);
+      }
     });
 };
 

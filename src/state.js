@@ -30,8 +30,9 @@ export const _put = (userId, astate, store, cb) => {
   log('Putting action state for %s %o', userId, astate);
   store.put(astate, (err, res) => {
     log('Put err %o result %o', err, res);
-    if(cb)
+    if (cb) {
       cb(err, res);
+    }
   });
 };
 
@@ -43,8 +44,9 @@ export const run = (userId, store, fn, cb) => {
 
     // Run the action function
     fn(err, ostate || {}, (fnErr, nstate) => {
-      if(fnErr)
+      if (fnErr) {
         return;
+      }
       // Store the new action state
       _put(userId, nstate, store, cb);
     });

@@ -41,8 +41,7 @@ export const query = (q, token, cb) => {
     try {
       body = JSON.parse(val.body);
       assert(body);
-    }
-    catch(err) {
+    } catch(err) {
       // Something is wrong with the query result body
       log('Error parsing query result %o', err);
       cb(err);
