@@ -1,4 +1,4 @@
-/*eslint-env es_modules */
+/* eslint-env es_modules */
 import { google } from 'googleapis';
 import querystring from 'querystring';
 import url from 'url';
@@ -31,7 +31,7 @@ class GoogleClient {
   handleCallback(store) {
     return (req, res, next) => {
       const qs = querystring.parse(url.parse(req.url).query);
-      return this.oAuth2Client.getToken(qs.code).then(body => {
+      return this.oAuth2Client.getToken(qs.code).then((body) => {
         log('got tokens for %o, body: %o', qs, body);
         // qs.state is the userId from above
         state.run(qs.state, store, (err, ostate, put) => {
@@ -46,11 +46,12 @@ class GoogleClient {
           put(null, newState);
           // we were in the middle of an action flow, continue...
         }, next);
-        // don't necessarily rely on these credentials, because the oAuth2Client is a singleton.
+        // don't necessarily rely on these credentials,
+        // because the oAuth2Client is a singleton.
         // the pouchdb store keeps track of each user's tokens.
         this.oAuth2Client.credentials = body.tokens;
       });
-    }
+    };
   }
 
   /**
@@ -70,7 +71,8 @@ class GoogleClient {
             userId,
             store,
             (err, ostate, put) => {
-              put(err, Object.assign({}, ostate, {
+              // May need to handle conflicts; user authenticating on multiple clients?
+              put(null, Object.assign({}, ostate, {
                 actionType: args[0],
                 action,
                 tokens: null
@@ -80,7 +82,7 @@ class GoogleClient {
           );
         });
         res.status(201).end();
-      }
+      };
 
       state.get(userId, store, (e, userState) => {
         log('get existing state for user: %o, err: %o', userState, e);
@@ -95,7 +97,7 @@ class GoogleClient {
             storeAction();
           });
       });
-    }
+    };
   }
 }
 
