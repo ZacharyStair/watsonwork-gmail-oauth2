@@ -80,19 +80,6 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
   });
 };
 
-const beginReauth = (wwToken) => (action, userId) => {
-  const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
-  googleClient.makeAuthorizeUrl(userId, scopes);
-  messages.sendTargeted(
-    action.conversationId,
-    userId,
-    action.targetDialogId,
-    'Please log in to Gmail',
-    googleClient.authorizeUrl,
-    wwToken()
-  );
-};
-
 // Create Express Web app
 export const webapp =
   (appId, secret, whsecret, initialStore, cb) => {
@@ -104,6 +91,8 @@ export const webapp =
       }
 
       const store = state.store(initialStore);
+
+      googleClient.wwToken = wwToken;
       
       const app = express();
       // Configure Express route for the app Webhook
@@ -118,7 +107,7 @@ export const webapp =
         // Handle Watson Work Webhook challenge requests
         sign.challenge(whsecret),
 
-        googleClient.checkToken(appId, store, beginReauth(wwToken)),
+        googleClient.checkToken(appId, store),
 
         // Handle Watson Work Webhook events
         messagesCallback(appId, store, wwToken)

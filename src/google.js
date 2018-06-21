@@ -5,6 +5,7 @@ import url from 'url';
 import debug from 'debug';
 import * as events from './events';
 import * as state from './state';
+import * as messages from './messages';
 
 // Setup debug log
 const log = debug('watsonwork-messages-google');
@@ -18,14 +19,6 @@ class GoogleClient {
     );
     this.handleCallback = this.handleCallback.bind(this);
     this.checkToken = this.checkToken.bind(this);
-  }
-
-  makeAuthorizeUrl(userId, scopes) {
-  	this.authorizeUrl = this.oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: scopes.join(' '),
-      state: userId
-    });
   }
 
   /**
@@ -52,33 +45,72 @@ class GoogleClient {
   handleCallback(store) {
     return (req, res, next) => {
       const qs = querystring.parse(url.parse(req.url).query);
-      return this.oAuth2Client.getToken(qs.code).then((body) => {
-        log('got tokens for %o, body: %o', qs, body);
-        // qs.state is the userId from above
-        state.run(qs.state, store, (err, ostate, put) => {
-          log('updating token, error %o old state %o', err, ostate);
-          if (err) {
-            // request may have originated from a different user
-            res.status(403).end();
-            put(err);
-            return;
+      return this.oAuth2Client.getToken(qs.code).then(
+        this.loopTokenRequest(qs.state, store, next)
+      );
+    };
+  }
+
+  reauth(action, userId) {
+    if (!this.wwToken) {
+      log('cannot send authorization request');
+      return;
+    }
+    const scopes = ['https://www.googleapis.com/auth/gmail.readonly'];
+    const authorizeUrl = this.oAuth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes.join(' '),
+      state: userId
+    });
+    messages.sendTargeted(
+      action.conversationId,
+      userId,
+      action.targetDialogId,
+      'Please log in to Gmail',
+      authorizeUrl,
+      this.wwToken()
+    );
+  };
+
+  // Refresh tokens 5m before they expire
+  getTTL(expiryDate) {
+    return Math.max(0, Date.now() - expiryDate - (5 * 60 * 1000));
+  }
+
+  loopTokenRequest(userId, store, cb) {
+    return (body) => {
+      log('got tokens for %s, body: %o', userId, body);
+      state.run(userId, store, (err, ostate, put) => {
+        if (err) {
+          // request may have originated from a different user
+          put(err);
+          return;
+        }
+        const newState = Object.assign({}, ostate, { tokens: body.tokens });
+        put(null, newState, () => {
+          setTimeout(
+            () => {
+              log('Requesting refresh token %s', body.tokens.refresh_token);
+              this.oAuth2Client.refreshToken(body.tokens.refresh_token).then(
+                this.loopTokenRequest(userId, store)
+              );
+            },
+            this.getTTL(body.tokens.expiry_date)
+          );
+          if (cb) {
+            cb();
           }
-          const newState = Object.assign({}, ostate, { tokens: body.tokens });
-          put(null, newState, next);
-          // we were in the middle of an action flow, continue...
         });
-        // don't necessarily store the credentials in this.oAuth2Client because it is a singleton.
-        // the pouchdb store keeps track of each user's tokens.
       });
     };
   }
 
   /**
    * Returns an express middleware function to handle unauthenticated users.
+   * @param {string} appId - to ensure the action originated from this app
    * @param {PouchDB} store
-   * @param {function} reauth - function to call if the user needs to reauth.
    */
-  checkToken(appId, store, reauth) {
+  checkToken(appId, store) {
     return (req, res, next) => {
       const { userId } = req.body;
       // if the user is not authenticated, store what they were trying to do
@@ -94,7 +126,7 @@ class GoogleClient {
                 action,
                 tokens: null
               }),
-              () => reauth(action, userId)
+              () => this.reauth(action, userId)
             );
         });
         res.status(201).end();
