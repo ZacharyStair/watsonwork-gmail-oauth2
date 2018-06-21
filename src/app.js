@@ -28,7 +28,7 @@ const handleCommand = (action, userId, wwToken, gmailTokens) => {
       userId,
       action.targetDialogId,
       'Your Messages',
-      _.unescape(data.threads.map((message) => `1. ${message.snippet}`).join('\\n')),
+      _.unescape(data.threads.map((message) => `- ${message.snippet}`).join('\\n')),
       wwToken()
     );
   });

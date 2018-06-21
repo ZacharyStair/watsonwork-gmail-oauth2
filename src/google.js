@@ -138,6 +138,8 @@ class GoogleClient {
           storeAction(userState, put);
           return;
         }
+        // TODO: instead of doing this, attempt to send the real action request
+        // and reauth on 401
         this.oAuth2Client.getTokenInfo(userState.tokens.access_token)
           .then(() => {
             next();
