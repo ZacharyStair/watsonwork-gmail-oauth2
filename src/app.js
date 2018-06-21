@@ -21,13 +21,13 @@ const log = debug('watsonwork-messages-app');
 
 const handleCommand = (action, userId, wwToken, gmailTokens) => {
   const gmail = googleClient.makeGmailInstance(gmailTokens);
-  gmail.users.messages.list({ userId: 'me', maxResults: 5 }).then(({ data }) => {
+  gmail.users.threads.list({ userId: 'me', maxResults: 5 }).then(({ data }) => {
     messages.sendTargeted(
       action.conversationId,
       userId,
       action.targetDialogId,
       'Your Messages',
-      data.messages.map((message) => message.id).join(', '),
+      data.threads.map((message) => message.snippet).join('; '),
       wwToken()
     );
   });
@@ -58,7 +58,7 @@ export const messagesCallback = (appId, store, wwToken) =>
 
 export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
   log('completed oauth flow, resuming user action...');
-  res.status(201).end();
+  res.end('Login successful, you may close this window and retry the `/messages` action');
 
   const userId = querystring.parse(url.parse(req.url).query).state;
   state.run(userId, store, (err, ostate, put) => {
