@@ -10,16 +10,15 @@ To try the sample app do the following:
 
 ### Deploying the app to IBM Bluemix
 
-If you want to give the sample app a quick try using [Bluemix]
-(https://bluemix.net), you can simply get it deployed to Bluemix straight
+If you want to give the sample app a quick try using [Bluemix](https://bluemix.net), you can simply get it deployed to Bluemix straight
 from Github without even having to download it to your local development
 environment and build it yourself. Just click the button below:
 
 [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/ZacharyStair/watsonwork-gmail-oauth2&branch=master)
 
 > Note: it is likely that the pipeline step failed to automatically configure,
-> you can create your own by adding a pipeline stage with two jobs: 'build'
-> and 'deploy' (or two different stages with one job each).
+> you can create your own by adding two different pipeline stages with one job each:
+> Build and Deploy.
 > 
 > For the build step, choose 'npm' as the 'builder type' and replace
 > the build script with the following (obtained from .bluemix/pipeline.yml):
