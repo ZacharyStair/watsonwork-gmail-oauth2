@@ -74,23 +74,31 @@ export const sendTargeted = (
   cb
 ) => {
   log(`annotating dialog ${targetDialogId}`);
-  graphql.query(util.format(`
-  mutation {
-    createTargetedMessage(input: {
-      conversationId: "%s"
-      targetUserId: "%s"
-      targetDialogId: "%s"
-      annotations: [{
-        genericAnnotation: {
-          title: "%s",
-          text: "%s"
+  graphql.query(
+    util.format(
+      `mutation {
+        createTargetedMessage(input: {
+          conversationId: "%s"
+          targetUserId: "%s"
+          targetDialogId: "%s"
+          annotations: [{
+            genericAnnotation: {
+              title: "%s",
+              text: "%s"
+            }
+          }]
+        }) {
+          successful
         }
-    	}]
-    }) {
-      successful
-    }
-  }`, conversationId, targetUserId, targetDialogId, title, text),
-    token, (err, body) => {
+      }`,
+      conversationId,
+      targetUserId,
+      targetDialogId,
+      title.replace('"', '\\"'),
+      text.replace('"', '\\"')
+    ),
+    token,
+    (err, body) => {
       if (err) {
         if (err.errors && cb) {
           cb(null, {});
@@ -104,7 +112,8 @@ export const sendTargeted = (
       if (cb) {
       	cb(null, body);
       }
-    });
+    }
+  );
 };
 
 

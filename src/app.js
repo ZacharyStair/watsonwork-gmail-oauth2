@@ -5,6 +5,7 @@ import debug from 'debug';
 import express from 'express';
 import querystring from 'querystring';
 import url from 'url';
+import _ from 'lodash';
 import * as bparser from 'body-parser';
 import * as http from 'http';
 import * as https from 'https';
@@ -27,7 +28,7 @@ const handleCommand = (action, userId, wwToken, gmailTokens) => {
       userId,
       action.targetDialogId,
       'Your Messages',
-      data.threads.map((message) => message.snippet).join('\\n\\n').replace('"', '\\"'),
+      _.unescape(data.threads.map((message) => message.snippet).join('\\n\\n')),
       wwToken()
     );
   });
