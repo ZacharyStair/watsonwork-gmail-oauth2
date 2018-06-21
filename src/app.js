@@ -27,7 +27,7 @@ const handleCommand = (action, userId, wwToken, gmailTokens) => {
       userId,
       action.targetDialogId,
       'Your Messages',
-      JSON.stringify(data),
+      data.messages.map((message) => message.id).join(', '),
       wwToken()
     );
   });
