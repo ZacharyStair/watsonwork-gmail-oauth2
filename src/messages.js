@@ -83,7 +83,7 @@ export const sendTargeted = (
       annotations: [{
         genericAnnotation: {
           title: "%s",
-          text: "%s"
+          text: """%s"""
         }
     	}]
     }) {
