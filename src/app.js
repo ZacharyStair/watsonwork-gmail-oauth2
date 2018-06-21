@@ -27,7 +27,7 @@ const handleCommand = (action, userId, wwToken, gmailTokens) => {
       userId,
       action.targetDialogId,
       'Your Messages',
-      data.threads.map((message) => message.snippet).join('; '),
+      data.threads.map((message) => message.snippet).join('\n\n'),
       wwToken()
     );
   });
@@ -60,6 +60,9 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
   log('completed oauth flow, resuming user action...');
   res.end('Login successful, you may close this window and retry the `/messages` action');
 
+  // This won't work as-written; your app can use the new access token from
+  // pouchDB state to do anything in gmail, but sending a targeted message back to
+  // Watson Workspace won't work because we already sent a targeted message to this dialog.
   const userId = querystring.parse(url.parse(req.url).query).state;
   state.run(userId, store, (err, ostate, put) => {
     log('completing user action with state %o error %o', ostate, err);

@@ -1,25 +1,8 @@
 # watsonwork-gmail-oauth2
 
-A sample Watson Work cognitive app that listens to messages posted to a
-space in IBM Watson Workspace, understands the natural language conversation
-happening in the space and posts helpful weather information as needed in
-the conversation.
-
-The Watson Work platform provides **spaces** for people to exchange
-**messages** in conversations. This sample app shows the following
-aspects of a Watson Work cognitive application:
-
-* how to implement a Watson Work application and use Watson Work APIs using
-Node.js;
-* how to authenticate and obtain an OAuth token, listen to a conversation
-in a space, receive messages on a Webhook endpoint, and send messages back
-to the conversation;
-* how to use the Watson Work Services and Watson Conversation cognitive
-capabilities to understand natural language, identify domain specific user
-intents, recognize entities such as locations and cities for example, and
-act based on previously identified intents and entities;
-* how to handle a multi-turn conversation and keep track of what's being
-said across multiple messages.
+A sample Watson Work app that presents a user with their messages from GMail,
+handling Google's OAuth2.0 flow and storing multiple users' tokens in a PouchDB
+instance.
 
 ## Try it out
 
@@ -79,35 +62,28 @@ cd watsonwork-weather
 npm run build
 ```
 
-### Configuring the Weather Company Data service
+### Configuring the Gmail API service
 
-The sample Weather app uses the Weather Company Data API to retrieve
-weather information, so you need to configure a Weather Company Data
-Bluemix service for it.
+You must create an app on the [Google Cloud Platform](https://console.cloud.google.com/),
+include the Gmail API under the 'APIs' section, and create 'credentials' for
+this app, providing your **route** public URL (from above), followed by
+`/oauth2Callback` (i.e. `https://<bluemix app name>.mybluemix.net/oauth2Callback`)
 
-Go to the
-[Bluemix Data & Analytics Dashboard]
-(https://console.ng.bluemix.net/catalog/?category=data) and create a Weather
-Company Data service.
-
-Note the Weather Company Data service user name and password, as you will
-need to configure the Weather app with them.
+This callback url will become our 'redirect uri' for the OAuth2.0 flow.
 
 ### Registering the app with Watson Work
 
 In your Web browser, go to [Watson Work Services / Apps]
 (https://workspace.ibm.com/developer/apps) and add a new app named
-**Messages** with a Webhook configured for **message-created** and
-**message-annotation-added** events.
+**Messages** (be sure to save the app's secret) with a Webhook configured **message-annotation-added** events (saving the webhook's secret).
 
 Set the Webhook **Callback URL** to a public URL targeting the server where
 you're planning to run the sample app,
-`https://<your server hostname>/weather` for example, or
-`https://<bluemix app name>.mybluemix.net/weather` if you've deployed it
+`https://<your server hostname>/messages` for example, or
+`https://<bluemix app name>.mybluemix.net/messages` if you've deployed it
 to Bluemix.
 
-Configure the **Make It Cognitive** section of the app to use your Watson
-Conversation workspace, user and password.
+Configure the **Add an Action** section of the app to use your /messages endpoint when invoked (i.e. make your command `/messages` and choose the webhook you just configured).
 
 Save the app and write down its app id, app secret and Webhook secret.
 
@@ -136,14 +112,7 @@ If you've followed the above steps to deploy the app to Bluemix, it is now
 also set up as a project in the [Bluemix DevOps Services](https://hub.jazz.net)
 Web IDE, allowing you to edit and manage the app directly from within the IDE.
 
-You can skip this step if you're not planning to use that Web IDE. To enable
-the app to be launched directly from the IDE, edit its
-[Launch Configuration](https://hub.jazz.net/tutorials/livesync/#launch_configuration)
-and under **Manifest Settings**, set its launch **Command** to:
-
-```
-npm install babel-cli@6.10.1 && npm run babel && npm start
-```
+Pushing whatever changes you make to the github repo for your bluemix app will automatically trigger your app server to redeploy.
 
 ### Starting the app locally
 
@@ -226,11 +195,12 @@ npm start
 You can now go back to
 [Watson Work Services / Apps](https://workspace.ibm.com/developer/apps),  
 edit the **Messages** app and set its Webhook **Callback URL** to
-`https://<subdomain name>.localtunnel.me/weather`.
+`https://<subdomain name>.localtunnel.me/messages`, and set the authorization
+callback of your Google Cloud app to the same.
 
 ### Enabling the app Webhook
 
-Now that the app is running and listening for HTTPS requests at a public URL,
+Once the app is running and listening for HTTPS requests at a public URL,
 you're ready to **enable** its Webhook on the Watson Work platform.
 
 Go back to
@@ -245,26 +215,17 @@ following log:
 watsonwork-weather-app Got Webhook verification challenge
 ```
 
-### Chatting with the app in a space
+### Using the app
 
-You're now ready to chat with the sample app!
+Once the webhook is enabled, that's it! Add the app to a space and invoke it using the `/messages` command (or whatever command you configured in WWS).
 
-Go to [Watson Workspace](https://workspace.ibm.com) and create a space
-named **Examples**, then open the **Apps** tab for that space and add the
-**Messages** app to it.
+The app will output a google link to prompt the user to authorize, allowing the
+app access to read their mail. If the user accepts and logs in, the app will
+receive and store an `access_token` for them that will allow the app to perform
+certain gmail requests as that user.
 
-In the **Examples** space, say "*Is it raining in San Francisco?*".
-
-The Messages app will respond with a message asking you to confirm that you're
-interested in the weather in San Francisco: 
-"*Hey [your name], I think you're looking for the weather conditions in
-San Francisco. Is that correct?*".
-
-Say "*yes*".
-
-The Messages app will then respond with the weather conditions in San
-Francisco, like this for example:
-"*San Francisco, CA, 48F Feels like 41F, Fair*"
+If the app then receives another `/messages` request from that user, it will
+show them snippets of their first 5 gmail threads.
 
 ## Project layout
 
@@ -273,17 +234,17 @@ The sample project source tree is organized as follows:
 ```sh
 README.md     - this README
 package.json  - Node.js package definition
-watson.json   - Watson Conversation training configuration
 
 src/          - Javascript sources
 
   app.js      - main app conversation handling script
-  events.js   - routes Webhook events to app logic
+  events.js   - parses Webhook events to be routed to app logic
   messages.js - reads and sends messages
+  google.js   - handles webhook events that require requests to be sent to google
   graphql.js  - runs GraphQL queries
   oauth.js    - obtains OAuth tokens for the app
   sign.js     - signs and verifies Webhook requests and responses
-  state.js    - stores conversation state in a database
+  state.js    - stores user authorization state in a database
   ssl.js      - configures the app to use an SSL certificate
 
   test/       - unit tests
