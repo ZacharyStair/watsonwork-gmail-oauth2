@@ -86,12 +86,17 @@ class GoogleClient {
           put(err);
           return;
         }
-        const newState = Object.assign({}, ostate, { tokens: body.tokens });
+        // keep the refresh token if we had one, assuming we didn't just get a new one.
+        let newState = Object.assign({}, ostate, { tokens: body.tokens });
+        if (ostate.tokens && !body.tokens.refresh_token) {
+          newState.tokens.refresh_token = ostate.tokens.refresh_token;
+        }
         put(null, newState, () => {
           setTimeout(
             () => {
-              log('Requesting refresh token %s', body.tokens.refresh_token);
-              this.oAuth2Client.refreshToken(body.tokens.refresh_token).then(
+              const token = body.tokens.refresh_token || ostate.tokens.refresh_token;
+              log('Requesting refresh token %s', token);
+              this.oAuth2Client.refreshToken(token).then(
                 this.loopTokenRequest(userId, store)
               );
             },
