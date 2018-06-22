@@ -35,7 +35,9 @@ export const run = (appId, secret, cb) => {
     }, (err, res) => {
       if(err || res.statusCode !== 200) {
         log('Error getting token %o', err || res.statusCode);
-        cb(err || new Error(res.statusCode));
+        if (cb) {
+          cb(err || new Error(res.statusCode));
+        }
         return;
       }
 
@@ -49,7 +51,9 @@ export const run = (appId, secret, cb) => {
       setTimeout(refresh, Math.max(0, t - 60000)).unref();
 
       // Return a function that'll return the current token
-      cb(undefined, current);
+      if (cb) {
+        cb(undefined, current);
+      }
     });
   };
 

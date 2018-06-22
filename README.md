@@ -72,8 +72,7 @@ This callback url will become our 'redirect uri' for the OAuth2.0 flow.
 
 ### Registering the app with Watson Work
 
-In your Web browser, go to [Watson Work Services / Apps]
-(https://workspace.ibm.com/developer/apps) and add a new app named
+In your Web browser, go to [Watson Work Services / Apps](https://workspace.ibm.com/developer/apps) and add a new app named
 **Messages** (be sure to save the app's secret) with a Webhook configured **message-annotation-added** events (saving the webhook's secret).
 
 Set the Webhook **Callback URL** to a public URL targeting the server where
