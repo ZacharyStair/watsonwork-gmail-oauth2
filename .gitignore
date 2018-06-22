@@ -6,3 +6,4 @@ server.key
 server.crt
 tmp/**
 .tern-project
+src.old/**
