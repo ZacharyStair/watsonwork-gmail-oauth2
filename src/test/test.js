@@ -1,5 +1,5 @@
 // A sample app that listens to messages posted to a space in IBM
-// Watson Workspace and implements actions that return the Weather.
+// Watson Workspace and implements actions that return the user's gmail messages.
 
 // Test the happy path
 
@@ -13,9 +13,9 @@
 //   post: (uri, opt, cb) => postspy(uri, opt, cb)
 // };
 
-// Load the Weather app
+// Load the app
 require('../app');
 
-describe('watsonwork-weather', () => {
+describe('watsonwork-gmail-oauth2', () => {
 });
 

@@ -54,10 +54,10 @@ In a terminal window, do the following:
 export DEBUG=watsonwork-*
 
 # Get the code
-git clone https://github.com/watsonwork/watsonwork-weather
+git clone https://github.com/ZacharyStair/watsonwork-gmail-oauth2
 
 # Build the app
-cd watsonwork-weather
+cd watsonwork-gmail-oauth2
 npm run build
 ```
 
@@ -213,7 +213,7 @@ check that it's up and responding correctly.
 The sample app will respond to that challenge request and output the
 following log:
 ```
-watsonwork-weather-app Got Webhook verification challenge
+watsonwork-messages-app Got Webhook verification challenge
 ```
 
 ### Using the app

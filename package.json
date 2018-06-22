@@ -1,5 +1,5 @@
 {
-  "name": "watsonwork-weather",
+  "name": "watsonwork-gmail-oauth2",
   "description": "A sample app that listens to messages posted to a space in IBM Watson Workspace and implements actions that authorize with google and return the user's messages",
   "license": "Apache-2.0",
   "version": "0.0.1",
@@ -25,7 +25,7 @@
   ],
   "main": "lib/app.js",
   "bin": {
-    "weather": "lib/app.js"
+    "messages": "lib/app.js"
   },
   "scripts": {
     "start": "node lib/app.js",

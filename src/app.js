@@ -34,7 +34,12 @@ const handleCommand = (action, userId, wwToken, gmailTokens) => {
   });
 };
 
-// Handle events sent to the Weather action Webhook at /messages
+/**
+ * Creates a function that is called when the app receives a `/messages` webhook.
+ * @param {String} appId - to ensure the app doesn't respond to other apps' messages
+ * @param {PouchDB} store
+ * @param {Function<String>} wwToken - returns a valid WW token to post as the app to WW
+ */
 export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
     log('Received body %o', req.body);
