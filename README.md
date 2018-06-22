@@ -102,6 +102,9 @@ GAPI_CLIENT_REDIRECT_URI: <obtained from Google app dashboard>
 DEBUG: watsonwork-*
 ```
 
+(you can use `GAPI_REFRESH_INTERVAL: 12345` to set the interval that token refresh 
+requests are sent out)
+
 Click the **> Start** button to start the app.
 
 ### Launching the app from the Bluemix DevOps Services IDE

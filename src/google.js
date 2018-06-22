@@ -74,7 +74,11 @@ class GoogleClient {
 
   // Refresh tokens 1m before they expire
   getTTL(expiryDate) {
-    return 10000; // Math.max(0, expiryDate - Date.now() - 60 * 1000);
+    let ttl = expiryDate - Date.now() - 60 * 1000;
+    if (process.env.GAPI_REFRESH_INTERVAL) {
+      ttl = parseInt(process.env.GAPI_REFRESH_INTERVAL, 10);
+    }
+    return Math.max(0, ttl);
   }
 
   loopTokenRequest(userId, store, cb) {
