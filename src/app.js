@@ -36,8 +36,8 @@ const handleCommand = (actionType, action, userId, wwToken, store) => {
       // remove any stored actions if action was successful.
       put(null, { _rev: ostate._rev, tokens });
     }).catch((e) => {
-      log('error getting messages: %o', e);
-      if (e && e.statusCode === 401) {
+      log('error getting messages: %o', e.response);
+      if (e && e.response && e.response.status === 401) {
         put(
           null,
           {
