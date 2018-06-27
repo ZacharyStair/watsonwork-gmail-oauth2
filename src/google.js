@@ -121,42 +121,34 @@ class GoogleClient {
    */
   checkToken(appId, store) {
     return (req, res, next) => {
+
+      // Respond to the Webhook right away, as any response messages will
+      // be sent asynchronously
+      res.status(200).end();
+
       const { userId } = req.body;
-      // if the user is not authenticated, store what they were trying to do
-      // in pouch so they can pick it back up when they finish authenticating.
-      const storeAction = (userState, put) => {
-        events.onActionSelected(req.body, appId, (actionId, action) => {
-          const args = actionId.split(' ');
-            // May need to handle conflicts; user authenticating on multiple clients?
-            put(
-              null,
-              Object.assign({}, userState, {
-                actionType: args[0],
-                action,
-                tokens: null
-              }),
-              () => this.reauth(action, userId)
-            );
-        });
-        res.status(201).end();
-      };
 
       state.run(userId, store, (e, userState, put) => {
         log('get existing state for user: %o, err: %o', userState, e);
         if (e || !userState.tokens || !userState.tokens.access_token) {
-          storeAction(userState, put);
+          // if the user is not authenticated, store what they were trying to do
+          // in pouch so they can pick it back up when they finish authenticating.
+          events.onActionSelected(req.body, appId, (actionId, action) => {
+            const args = actionId.split(' ');
+              // May need to handle conflicts; user authenticating on multiple clients?
+              put(
+                null,
+                Object.assign({}, userState, {
+                  actionType: args[0],
+                  action,
+                  tokens: null
+                }),
+                () => this.reauth(action, userId)
+              );
+          });
           return;
         }
-        // TODO: instead of doing this, attempt to send the real action request
-        // and reauth on 401
-        this.oAuth2Client.getTokenInfo(userState.tokens.access_token)
-          .then(() => {
-            next();
-          })
-          .catch((oauthInfoError) => {
-            log('Oauth err %o', oauthInfoError);
-            storeAction(userState, put);
-          });
+        next();
       });
     };
   }

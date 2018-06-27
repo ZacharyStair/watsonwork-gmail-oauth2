@@ -20,17 +20,36 @@ import googleClient from './google';
 // Debug log
 const log = debug('watsonwork-messages-app');
 
-const handleCommand = (action, userId, wwToken, gmailTokens) => {
-  const gmail = googleClient.makeGmailInstance(gmailTokens);
-  gmail.users.threads.list({ userId: 'me', maxResults: 5 }).then(({ data }) => {
-    messages.sendTargeted(
-      action.conversationId,
-      userId,
-      action.targetDialogId,
-      'Your Messages',
-      _.unescape(data.threads.map((message) => `- ${message.snippet}`).join('\\n')),
-      wwToken()
-    );
+const handleCommand = (actionType, action, userId, wwToken, store) => {
+  state.run(userId, store, (err, ostate, put) => {
+    const { tokens } = ostate;
+    const gmail = googleClient.makeGmailInstance(tokens);
+    gmail.users.threads.list({ userId: 'me', maxResults: 5 }).then(({ data }) => {
+      messages.sendTargeted(
+        action.conversationId,
+        userId,
+        action.targetDialogId,
+        'Your Messages',
+        _.unescape(data.threads.map((message) => `- ${message.snippet}`).join('\\n')),
+        wwToken()
+      );
+      // remove any stored actions if action was successful.
+      put(null, { _rev: ostate._rev, tokens });
+    }).catch((e) => {
+      log('error getting messages: %o', e);
+      if (e && e.status === 401) {
+        put(
+          null,
+          {
+            _rev: ostate._rev,
+            actionType: actionType || ostate.actionType,
+            action: action || ostate.action,
+            tokens: null
+          },
+          () => googleClient.reauth(action || ostate.action, userId)
+        );
+      }
+    });
   });
 };
 
@@ -44,21 +63,16 @@ export const messagesCallback = (appId, store, wwToken) =>
   (req, res) => {
     log('Received body %o', req.body);
 
-    // Respond to the Webhook right away, as any response messages will
-    // be sent asynchronously
-    res.status(201).end();
     events.onActionSelected(req.body, appId,
       (actionId, action, userId) => {
 
-        state.get(userId, store, (err, userState) => {
-            // handles action fulfillment annotations
-          const args = actionId.split(' ');
-          switch(args[0]) {
-            case '/messages':
-              handleCommand(action, userId, wwToken, userState.tokens);
-              break;
-          }
-        });
+        // handles action fulfillment annotations
+        const args = actionId.split(' ');
+        switch(args[0]) {
+          case '/messages':
+            handleCommand(args[0], action, userId, wwToken, store);
+            break;
+        }
     });
   };
 
@@ -70,17 +84,15 @@ export const oauthCompleteCallback = (store, wwToken) => (req, res) => {
   // pouchDB state to do anything in gmail, but sending a targeted message back to
   // Watson Workspace won't work because we already sent a targeted message to this dialog.
   const userId = querystring.parse(url.parse(req.url).query).state;
-  state.run(userId, store, (err, ostate, put) => {
+  state.get(userId, store, (err, ostate) => {
     log('completing user action with state %o error %o', ostate, err);
     if (err) {
       return;
     }
-    const { actionType, action, tokens } = ostate;
+    const { actionType, action } = ostate;
     switch(actionType) {
       case '/messages':
-        handleCommand(action, userId, wwToken, tokens);
-        // once complete, remove state for user except for tokens
-        put(null, { _rev: ostate._rev, tokens });
+        handleCommand(actionType, action, userId, wwToken, store);
         break;
     }
   });
