@@ -228,6 +228,16 @@ certain gmail requests as that user.
 If the app then receives another `/messages` request from that user, it will
 show them snippets of their first 5 gmail threads.
 
+Tokens will be refreshed automatically 1 minute before they expire, but note that
+Gmail does not return refresh tokens if the user has already authorized an app.
+This means if you redeploy the app, the pouchDB (in-memory) store will be emptied
+and users' refresh tokens will be lost. For users to have their tokens refreshed
+after pushing new changes to the app, they will have to go revoke permissions from
+gmail.
+
+If you replace the pouchDB database with a separate standalone service, that can
+mitigate this issue.
+
 ## Project layout
 
 The sample project source tree is organized as follows:
